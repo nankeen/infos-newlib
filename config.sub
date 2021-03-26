@@ -1279,6 +1279,9 @@ case $os in
 	# First match some system type aliases that might get confused
 	# with valid system types.
 	# solaris* is a basic system type, with this one exception.
+	infos)
+		os=infos
+		;;
 	auroraux)
 		os=auroraux
 		;;
