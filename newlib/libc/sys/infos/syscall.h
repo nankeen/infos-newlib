@@ -1,7 +1,5 @@
 #pragma once
-#include <sys/_types/_ssize_t.h>
 #include <sys/types.h>
-#include <sys/time.h>
 #include <sys/times.h>
 #include <stdint.h>
 #include <sys/stat.h>
@@ -55,4 +53,3 @@ clock_t times(struct tms *buf);
 int unlink(char *name);
 int wait(int *status);
 ssize_t write(HFILE file, const char *ptr, size_t len);
-int gettimeofday(struct timeval *p, struct timezone *z);
