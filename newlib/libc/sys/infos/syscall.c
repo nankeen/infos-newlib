@@ -11,6 +11,7 @@ HFILE __console_handle;
 void _exit(unsigned int exit_code)
 {
     asm volatile("int $0x81" : : "a"((uint64_t)SYS_EXIT), "D"(exit_code));
+    __builtin_unreachable();
 }
 
 int close(HANDLE handle)
