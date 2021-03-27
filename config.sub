@@ -1279,9 +1279,6 @@ case $os in
 	# First match some system type aliases that might get confused
 	# with valid system types.
 	# solaris* is a basic system type, with this one exception.
-	infos)
-		os=infos
-		;;
 	auroraux)
 		os=auroraux
 		;;
@@ -1339,7 +1336,7 @@ case $os in
 	# The portable systems comes first.
 	# Each alternative MUST end in a * to match a version number.
 	# sysv* is not here because it comes later, after sysvr4.
-	gnu* | bsd* | mach* | minix* | genix* | ultrix* | irix* \
+	gnu* | bsd* | mach* | minix* | genix* | ultrix* | irix* | -infos* \
 	     | *vms* | esix* | aix* | cnk* | sunos | sunos[34]*\
 	     | hpux* | unos* | osf* | luna* | dgux* | auroraux* | solaris* \
 	     | sym* | kopensolaris* | plan9* \
