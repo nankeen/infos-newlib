@@ -2,7 +2,6 @@
  
 extern void exit(int code);
 extern int main();
-HFILE __console_handle;
  
 void _start()
 {
