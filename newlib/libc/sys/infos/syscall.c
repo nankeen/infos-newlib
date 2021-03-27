@@ -6,17 +6,6 @@ extern int errno;
 char *__env[1] = { 0 };
 char **environ = __env;
 
-static unsigned long syscall(uint32_t nr, unsigned long a1, unsigned long a2, unsigned long a3, unsigned long a4, unsigned long a5)
-{
-    unsigned long ret;
-
-    register unsigned long r8 asm("r8") = a5;
-    
-    asm volatile("int $0x81" : "=a"(ret) : "a"((unsigned long)nr), "D"(a1), "S"(a2), "d"(a3), "c"(a4), "r"(r8) : "r11");
-    
-    return ret;
-}
- 
 void _exit(unsigned int exit_code)
 {
     asm volatile("int $0x81" : : "a"((uint64_t)SYS_EXIT), "D"(exit_code));
@@ -84,19 +73,35 @@ HFILE open(const char *name, int flags, int mode)
 
 ssize_t read(HFILE file, char *ptr, size_t len)
 {
+    // Hack to support the different conventions between InfOS and POSIX
+    if (file == STDIN_FILENO || file == STDOUT_FILENO || file == STDERR_FILENO) {
+        file = __console_handle;
+    }
     ssize_t ret;
     asm volatile("int $0x81" : "=a"(ret) : "a"(SYS_READ), "D"(file), "S"(ptr), "d"(len));
     return ret;
 }
 
-// TODO: Implement this with mmap
-caddr_t sbrk(int incr) {
+
+static void *mmap(void *addr, size_t len, int flags, HFILE fd, off_t offset)
+{
+    void *ret;
+    
+    asm volatile("int $0x81" : "=a"(ret) : "a"(SYS_MMAP), "D"(addr), "S"(len), "d"(flags), "c"(fd), "r"(offset));
+    
+    return ret;
+}
+
+caddr_t sbrk(int incr)
+{
+    // We implement this with mmap instead
     extern char _end;		/* Defined by the linker */
-    static char *heap_end;
+    static void *heap_end;
     char *prev_heap_end;
 
     if (heap_end == 0) {
-        heap_end = &_end;
+        heap_end = (void *)(__align_up_page((uintptr_t)&_end) + (__page_size << 2));
+        mmap(heap_end, 0x5000, -1, 0, 0);
     }
     prev_heap_end = heap_end;
 
@@ -115,7 +120,8 @@ clock_t times(struct tms *buf)
     return -1;
 }
 
-int unlink(char *name){
+int unlink(char *name)
+{
     errno = ENOENT;
     return -1; 
 }
@@ -129,6 +135,10 @@ int wait(int *status)
 
 ssize_t write(HFILE file, const char *ptr, size_t len)
 {
+    // Hack to support the different conventions between InfOS and POSIX
+    if (file == STDIN_FILENO || file == STDOUT_FILENO || file == STDERR_FILENO) {
+        file = __console_handle;
+    }
     ssize_t ret;
     asm volatile("int $0x81" : "=a"(ret) : "a"(SYS_WRITE), "D"(file), "S"(ptr), "d"(len));
     return ret;

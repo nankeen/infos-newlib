@@ -23,6 +23,18 @@
 #define SYS_USLEEP          0x0f
 #define SYS_GET_TOD         0x10
 #define SYS_MMAP            0x15
+#define STDIN_FILENO        0
+#define STDOUT_FILENO       1
+#define STDERR_FILENO       2
+
+#define __page_bits 12lu
+#define __page_size (1lu << __page_bits)
+#define __page_offset(__addr) ((__addr) & (__page_size - 1lu))
+#define __page_base(__addr) ((__addr) & ~(__page_size - 1lu))
+#define __page_index(__addr) ((__addr) >> __page_bits)
+
+#define __align_up(__value, __alignment) (__value + ((__value % __alignment == 0lu) ? 0lu : (__alignment - (__value % __alignment))))
+#define __align_up_page(__value) __align_up(__value, __page_size)
 
 typedef unsigned long HANDLE;
 typedef HANDLE HFILE;
@@ -34,7 +46,10 @@ struct tod {
     unsigned short seconds, minutes, hours, day_of_month, month, year;
 };
 
+static inline int is_error(HANDLE h) { return h == (HANDLE)-1; }
+
 extern char **environ;
+extern HFILE __console_handle;
 void _exit(unsigned int exit_code);
 int close(HFILE file);
 HPROC execve(char *name, char **argv, char **env);
