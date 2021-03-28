@@ -1,4 +1,5 @@
 #include "syscall.h"
+#include <sys/_types/_caddr_t.h>
 
 #undef errno
 extern int errno;
@@ -95,37 +96,37 @@ static void *mmap(void *addr, size_t len, int flags, HFILE fd, off_t offset)
     return ret;
 }
 
-caddr_t sbrk(int incr)
+static int sbrk_needs_init = 1;
+static caddr_t sbrk_curbrk;
+static size_t sbrk_region_size = 4*1024*1024;
+
+caddr_t sbrk(int size)
 {
     // We implement this with mmap instead
     // _end is defined by the linker
     extern char _end;
-    static void *heap_end;
-    static void *alloc_end;
     char *prev_heap_end;
 
-    // Initialize heap
-    if (heap_end == 0 || alloc_end == 0) {
-        heap_end = (void *)(__align_up_page((uintptr_t)&_end) + (__page_size << 2));
-        heap_end = mmap(heap_end, 0x1000, -1, 0, 0);
-        if (heap_end < 0) {
+    if (sbrk_needs_init) {
+        sbrk_needs_init = 0;
+        // Simulate with mmap
+        sbrk_curbrk = (caddr_t)(__align_up_page((uintptr_t)&_end) + (__page_size << 2));
+        if (mmap(sbrk_curbrk, sbrk_region_size, -1, 0, 0) < 0) {
+            errno = ENOMEM;
             return (caddr_t)-1;
         }
-        alloc_end = heap_end + 0x1000;
+    }
+    
+    if (size <= 0) {
+        return sbrk_curbrk;
+    } else if (size > sbrk_region_size) {
+        errno = ENOMEM;
+        return (caddr_t)-1;
     }
 
-    // Check if growing out of alloc end
-    if (heap_end + incr >= alloc_end) {
-        size_t alloc_size = __align_up_page(incr);
-        if(mmap(alloc_end, alloc_size, -1, 0, 0) < 0) {
-            return (caddr_t)-1;
-        }
-        alloc_end += alloc_size;
-    }
-
-    prev_heap_end = heap_end;
-    heap_end += incr;
-    return (caddr_t) prev_heap_end;
+    sbrk_curbrk += size;
+    sbrk_region_size -= size;
+    return (sbrk_curbrk - size);
 }
 
 int stat(const char *file, struct stat *st)
