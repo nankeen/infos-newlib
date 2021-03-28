@@ -98,16 +98,32 @@ static void *mmap(void *addr, size_t len, int flags, HFILE fd, off_t offset)
 caddr_t sbrk(int incr)
 {
     // We implement this with mmap instead
-    extern char _end;		/* Defined by the linker */
+    // _end is defined by the linker
+    extern char _end;
     static void *heap_end;
+    static void *alloc_end;
     char *prev_heap_end;
 
-    if (heap_end == 0) {
+    // Initialize heap
+    if (heap_end == 0 || alloc_end == 0) {
         heap_end = (void *)(__align_up_page((uintptr_t)&_end) + (__page_size << 2));
-        mmap(heap_end, 0x5000, -1, 0, 0);
+        heap_end = mmap(heap_end, 0x1000, -1, 0, 0);
+        if (heap_end < 0) {
+            return (caddr_t)-1;
+        }
+        alloc_end = heap_end + 0x1000;
     }
-    prev_heap_end = heap_end;
 
+    // Check if growing out of alloc end
+    if (heap_end + incr >= alloc_end) {
+        size_t alloc_size = __align_up_page(incr);
+        if(mmap(alloc_end, alloc_size, -1, 0, 0) < 0) {
+            return (caddr_t)-1;
+        }
+        alloc_end += alloc_size;
+    }
+
+    prev_heap_end = heap_end;
     heap_end += incr;
     return (caddr_t) prev_heap_end;
 }
