@@ -1,5 +1,4 @@
 #include "syscall.h"
-#include <sys/_types/_caddr_t.h>
 
 #undef errno
 extern int errno;
