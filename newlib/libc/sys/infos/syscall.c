@@ -97,19 +97,18 @@ static void *mmap(void *addr, size_t len, int flags, HFILE fd, off_t offset)
 
 static int sbrk_needs_init = 1;
 static caddr_t sbrk_curbrk;
-static size_t sbrk_region_size = 4*1024*1024;
+static size_t sbrk_region_size = 20*1024*1024;
 
 caddr_t sbrk(int size)
 {
     // We implement this with mmap instead
     // _end is defined by the linker
-    extern char _end;
     char *prev_heap_end;
 
     if (sbrk_needs_init) {
         sbrk_needs_init = 0;
         // Simulate with mmap
-        sbrk_curbrk = (caddr_t)(__align_up_page((uintptr_t)&_end) + (__page_size << 2));
+        sbrk_curbrk = (caddr_t)(__align_up_page(0x10000000) + (__page_size << 2));
         if (mmap(sbrk_curbrk, sbrk_region_size, -1, 0, 0) < 0) {
             errno = ENOMEM;
             return (caddr_t)-1;
