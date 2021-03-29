@@ -22,6 +22,9 @@
 #define SYS_JOIN_THREAD     0x0e
 #define SYS_USLEEP          0x0f
 #define SYS_GET_TOD         0x10
+#define SYS_GET_TICKS       0x11
+#define SYS_PREAD           0x13
+#define SYS_PWRITE          0x14
 #define SYS_MMAP            0x15
 #define STDIN_FILENO        0
 #define STDOUT_FILENO       1
@@ -68,3 +71,6 @@ clock_t times(struct tms *buf);
 int unlink(char *name);
 int wait(int *status);
 ssize_t write(HFILE file, const char *ptr, size_t len);
+int usleep(useconds_t useconds);
+ssize_t pread(int fd, void *buf, size_t count, off_t offset);
+clock_t clock();

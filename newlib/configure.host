@@ -438,6 +438,7 @@ esac
 case "${host}" in
   *-*-infos*)
 	sys_dir=infos
+	newlib_cflags="${newlib_cflags} -DCLOCK_PROVIDED"
 	;;
   *-*-cygwin*)
 	posix_dir=posix

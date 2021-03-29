@@ -161,3 +161,24 @@ ssize_t write(HFILE file, const char *ptr, size_t len)
     asm volatile("int $0x81" : "=a"(ret) : "a"(SYS_WRITE), "D"(file), "S"(ptr), "d"(len));
     return ret;
 }
+
+int usleep(useconds_t useconds)
+{
+    int ret;
+    asm volatile("int $0x81" : "=a"(ret) : "a"(SYS_USLEEP), "D"(useconds));
+    return ret;
+}
+
+ssize_t pread(int fd, void *buf, size_t count, off_t offset)
+{
+    ssize_t ret;
+    asm volatile("int $0x81" : "=a"(ret) : "a"(SYS_PREAD), "D"(fd), "S"(buf), "d"(count), "c"(offset));
+    return ret;
+}
+
+clock_t clock()
+{
+    ssize_t ret;
+    asm volatile("int $0x81" : "=a"(ret) : "a"(SYS_GET_TICKS));
+    return ret;
+}
