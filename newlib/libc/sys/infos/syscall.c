@@ -1,4 +1,5 @@
 #include "syscall.h"
+#include <stdio.h>
 
 #undef errno
 extern int errno;
@@ -96,34 +97,37 @@ static void *mmap(void *addr, size_t len, int flags, HFILE fd, off_t offset)
 }
 
 static int sbrk_needs_init = 1;
-static caddr_t sbrk_curbrk;
-static size_t sbrk_region_size = 20*1024*1024;
+static caddr_t sbrk_curbrk = (caddr_t)0x10000000;
+static caddr_t sbrk_end = (caddr_t)0x10000000;
 
-caddr_t sbrk(int size)
+caddr_t sbrk(ptrdiff_t size)
 {
     // We implement this with mmap instead
     // _end is defined by the linker
-    char *prev_heap_end;
 
-    if (sbrk_needs_init) {
+    if (sbrk_needs_init == 1) {
         sbrk_needs_init = 0;
-        // Simulate with mmap
-        sbrk_curbrk = (caddr_t)(__align_up_page(0x10000000) + (__page_size << 2));
-        if (mmap(sbrk_curbrk, sbrk_region_size, -1, 0, 0) < 0) {
+        if (is_error((long)mmap(sbrk_end, __page_size, -1, 0, 0))) {
             errno = ENOMEM;
             return (caddr_t)-1;
         }
+        sbrk_end += __page_size;
     }
     
     if (size <= 0) {
         return sbrk_curbrk;
-    } else if (size > sbrk_region_size) {
-        errno = ENOMEM;
-        return (caddr_t)-1;
+    } else if (sbrk_curbrk + size >= sbrk_end) {
+        size_t n_alloc = __align_up_page(size);
+        for (size_t i = 0; i < n_alloc; i += __page_size) {
+            if (is_error((long)mmap(sbrk_end, __page_size, -1, 0, 0))) {
+                errno = ENOMEM;
+                return (caddr_t)-1;
+            }
+            sbrk_end += __page_size;
+        }
     }
 
     sbrk_curbrk += size;
-    sbrk_region_size -= size;
     return (sbrk_curbrk - size);
 }
 

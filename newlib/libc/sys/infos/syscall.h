@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <sys/stat.h>
 #include <sys/errno.h>
+#include <stddef.h>
 
 #define SYS_NOP             0x00
 #define SYS_YIELD           0x01
@@ -32,9 +33,6 @@
 
 #define __page_bits 12lu
 #define __page_size (1lu << __page_bits)
-#define __page_offset(__addr) ((__addr) & (__page_size - 1lu))
-#define __page_base(__addr) ((__addr) & ~(__page_size - 1lu))
-#define __page_index(__addr) ((__addr) >> __page_bits)
 
 #define __align_up(__value, __alignment) (__value + ((__value % __alignment == 0lu) ? 0lu : (__alignment - (__value % __alignment))))
 #define __align_up_page(__value) __align_up(__value, __page_size)
@@ -49,7 +47,7 @@ struct tod {
     unsigned short seconds, minutes, hours, day_of_month, month, year;
 };
 
-static inline int is_error(HANDLE h) { return h == (HANDLE)-1; }
+static inline int is_error(long h) { return h == -1; }
 
 extern char **environ;
 extern HFILE __console_handle;
@@ -65,7 +63,7 @@ int link(char *old, char *new_link);
 int lseek(int file, int ptr, int dir);
 HFILE open(const char *name, int flags, int mode); 
 ssize_t read(HFILE file, char *ptr, size_t len);
-caddr_t sbrk(int incr);
+caddr_t sbrk(ptrdiff_t size);
 int stat(const char *file, struct stat *st);
 clock_t times(struct tms *buf);
 int unlink(char *name);
